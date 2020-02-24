@@ -1,0 +1,133 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: 
+        latex_engine: xelatex
+  github_document: 
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+wine <- read_csv("winemag-data-130k-v2.csv") %>% select(-X1,-description,-taster_name, -taster_twitter_handle)
+```
+# Intro
+Following [Julia Silge's guide](https://juliasilge.com/blog/intro-tidymodels/), I decided to try to predict the score of wine, using the [Wine Reviews dataset](https://www.kaggle.com/zynicide/wine-reviews) from Kaggle. 
+
+## Summary
+First, just let's look at the data. 
+```{r Summary}
+library(skimr)
+skim(wine)
+```
+
+There's a lot of missing values all over. This needs to be dealt with, in some form. 
+
+## EDA
+Then, lets see if we can see something interesting by plotting the points by country in a box plot. For ease of reading, I've sorted the boxplot with the highest mean in descending order. Thanks to the R4DS slack-group for helping me with this!
+
+```{r Boxplot}
+wine %>% 
+        drop_na(country) %>%
+        mutate(country = fct_reorder(country, .x = points, .fun = mean)) %>% 
+        ggplot(aes(x=country, y=points)) +
+        geom_boxplot()+
+        coord_flip()
+```
+
+And I don't know about you, but I was higly surpriced to see that England and India were the two countries with the on average best wines!
+
+# Building a model
+Now, let's build a model! First let's drop the NA's. Sadly, I don't know much imputation yet, so this is the way it has to be(for now!).
+Then split it into training and testing sets.
+```{r Splitting}
+wine <- wine %>% drop_na() %>% select(points, price, country) %>%
+  mutate(country = as.factor(country))
+set.seed(1234)
+wine_split <- initial_split(wine)
+
+wine_test <- testing(wine_split)
+wine_train <- training(wine_split)
+```
+
+
+## Specs 
+Using a Random Forest in regression mode, we set the engine to use the ranger package. 
+```{r Setting Specs}
+rf_spec <- rand_forest(mode = "regression") %>%
+        set_engine("ranger")
+rf_spec
+```
+
+## Fitting
+Then let's fit it, using `points` as the target and every other variable as a predictor. 
+```{r Fitting}
+rf_fit <- rf_spec %>%
+        fit(points ~.,
+            data=wine_train)
+rf_fit
+```
+
+## Results
+So, let's look at the results!
+```{r Results}
+results_train <- rf_fit %>%
+  predict(new_data = wine_train) %>%
+  mutate(truth = wine_train$points) %>% 
+        rmse(truth = truth, estimate = .pred) %>% 
+        mutate(split = "training")
+
+results_test <- rf_fit %>%
+  predict(new_data = wine_test) %>%
+  mutate(truth = wine_test$points) %>% 
+        rmse(truth = truth, estimate = .pred) %>% 
+        mutate(split = "test")
+
+results <- results_train %>% bind_rows(results_test)
+results
+```
+Sadly, as we can see, the model seem to have been overfitted to the training data. Let's correct that!
+
+## Cross validating
+
+```{r Cross Validation, eval=FALSE}
+set.seed(1234)
+wine_folds <- vfold_cv(wine_train)
+
+rf_res <- fit_resamples(
+  points ~ .,
+  rf_spec,
+  wine_folds)
+
+rf_res %>%
+  collect_metrics()
+```
+
+which sadly gives me the following error:
+x Fold01: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold02: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold03: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold04: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold05: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold06: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold07: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold08: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold09: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+x Fold10: formula: Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]): contrasts can be applied only to factors with 2 or more...
+All models failed in [fit_resamples()]. See the `.notes` column.
+
+Any ideas?
+
+
+
+
+
+
+
+
+
+
+
+
