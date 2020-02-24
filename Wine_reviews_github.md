@@ -1,12 +1,76 @@
 Wine reviews
 ================
 
+``` r
+library(tidyverse)
+```
+
+    ## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+
+    ## ✓ ggplot2 3.2.1     ✓ purrr   0.3.3
+    ## ✓ tibble  2.1.3     ✓ dplyr   0.8.4
+    ## ✓ tidyr   1.0.0     ✓ stringr 1.4.0
+    ## ✓ readr   1.3.1     ✓ forcats 0.4.0
+
+    ## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+``` r
+library(tidymodels)
+```
+
+    ## Registered S3 method overwritten by 'xts':
+    ##   method     from
+    ##   as.zoo.xts zoo
+
+    ## ── Attaching packages ───────────────────────────────────────────────────────────────────────────────────────────────────────── tidymodels 0.1.0 ──
+
+    ## ✓ broom     0.5.4     ✓ rsample   0.0.5
+    ## ✓ dials     0.0.4     ✓ tune      0.0.1
+    ## ✓ infer     0.5.1     ✓ workflows 0.1.0
+    ## ✓ parsnip   0.0.5     ✓ yardstick 0.0.5
+    ## ✓ recipes   0.1.9
+
+    ## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────────────────────── tidymodels_conflicts() ──
+    ## x scales::discard() masks purrr::discard()
+    ## x dplyr::filter()   masks stats::filter()
+    ## x recipes::fixed()  masks stringr::fixed()
+    ## x dplyr::lag()      masks stats::lag()
+    ## x dials::margin()   masks ggplot2::margin()
+    ## x yardstick::spec() masks readr::spec()
+    ## x recipes::step()   masks stats::step()
+
+``` r
+wine <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-28/winemag-data-130k-v2.csv") %>% select(-X1,-description,-taster_name, -taster_twitter_handle)
+```
+
+    ## Warning: Missing column names filled in: 'X1' [1]
+
+    ## Parsed with column specification:
+    ## cols(
+    ##   X1 = col_double(),
+    ##   country = col_character(),
+    ##   description = col_character(),
+    ##   designation = col_character(),
+    ##   points = col_double(),
+    ##   price = col_double(),
+    ##   province = col_character(),
+    ##   region_1 = col_character(),
+    ##   region_2 = col_character(),
+    ##   taster_name = col_character(),
+    ##   taster_twitter_handle = col_character(),
+    ##   title = col_character(),
+    ##   variety = col_character(),
+    ##   winery = col_character()
+    ## )
+
 # Intro
 
 Following [Julia Silge’s
 guide](https://juliasilge.com/blog/intro-tidymodels/), I decided to try
 to predict the score of wine, using the [Wine Reviews
-dataset](%22https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-05-28%22)
+dataset](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-05-28)
 from R4DS’s Tidy Tuesday.
 
 ## Summary
@@ -101,7 +165,7 @@ rf_fit
 
     ## parsnip model object
     ## 
-    ## Fit time:  32.5s 
+    ## Fit time:  25s 
     ## Ranger result
     ## 
     ## Call:
